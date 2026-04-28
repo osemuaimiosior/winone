@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "@fontsource/space-grotesk/400.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/space-grotesk/700.css";
+
+@layer base {
+  :root {
+    --background: 210 30% 96%;
+    --foreground: 220 24% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 24% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 24% 12%;
+
+    --primary: 184 88% 28%;
+    --primary-foreground: 220 24% 12%;
+
+    --secondary: 210 24% 90%;
+    --secondary-foreground: 220 24% 16%;
+
+    --muted: 210 22% 92%;
+    --muted-foreground: 218 12% 42%;
+
+    --accent: 184 88% 28%;
+    --accent-foreground: 220 20% 4%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 20% 84%;
+    --input: 214 20% 84%;
+    --ring: 184 88% 28%;
+
+    --radius: 0.75rem;
+
+    --glow-primary: 184 88% 28%;
+    --glow-secondary: 260 55% 42%;
+
+    --sidebar-background: 210 30% 96%;
+    --sidebar-foreground: 220 24% 16%;
+    --sidebar-primary: 184 88% 28%;
+    --sidebar-primary-foreground: 220 24% 12%;
+    --sidebar-accent: 210 24% 90%;
+    --sidebar-accent-foreground: 220 24% 16%;
+    --sidebar-border: 214 20% 84%;
+    --sidebar-ring: 184 88% 28%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: "Space Grotesk", system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      hsl(184 88% 28%),
+      hsl(204 82% 34%),
+      hsl(260 55% 42%)
+    );
+  }
+
+  .bg-glow {
+    box-shadow: 0 0 80px 20px hsl(175 85% 50% / 0.12),
+      0 0 200px 60px hsl(260 70% 60% / 0.06);
+  }
+
+  .bg-grid {
+    background-image: linear-gradient(
+        hsl(214 20% 84% / 0.65) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, hsl(214 20% 84% / 0.65) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .border-glow {
+    border-color: hsl(184 88% 28% / 0.3);
+    box-shadow: 0 0 15px -3px hsl(184 88% 28% / 0.12),
+      inset 0 0 15px -3px hsl(184 88% 28% / 0.05);
+  }
+
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+  .card-hover:hover {
+    border-color: hsl(184 88% 28% / 0.4);
+    box-shadow: 0 0 30px -5px hsl(184 88% 28% / 0.14),
+      inset 0 0 30px -5px hsl(184 88% 28% / 0.04);
+    transform: translateY(-2px);
+  }
+}

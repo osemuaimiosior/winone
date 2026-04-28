@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package registry;
+
+service Registry {
+
+    rpc checkNodeDetails(Details) returns (StatusMessage) {}
+    rpc checkAuthClientDetails(Detailstwo) returns (StatusMessage) {}
+    rpc registerNodeDetails(Detailsthree) returns (StatusMessage) {}
+}
+
+message Details {
+    string NODE_CODE = 1;
+    string HOST_NAME = 2;
+}
+
+message Detailstwo {
+    string USER_AUTH = 1;
+    string ID = 2;
+}
+
+message UserToken {
+    string USER_AUTH = 1;
+    string ID = 2;
+}
+
+message NodePayload {
+    string nodeId = 1;
+    int32 cpuUsage = 2;
+    string systemInfo = 3;
+    string platform = 4;
+    int32 cpuCores = 5;
+    int32 ramTotal = 6;
+    int32 ramFree = 7;
+    int32 gpuUtilization = 8;
+    int32 gpuMemoryFree = 9;
+    int32 temperature = 10;
+    int32 simulationsPerSecond = 11;
+    int32 uptime = 12;
+    string nodeStatus = 13;
+    string jobStatus = 14;
+    int32 nodeScore = 15;
+    string lastHeartbeat = 16;
+}
+
+message Detailsthree {
+    NodePayload nodePayload = 1;
+    UserToken userToken = 2;
+}
+
+message StatusMessage {
+    string message = 1;
+    string details = 2;
+}

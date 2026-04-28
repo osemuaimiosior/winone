@@ -1,0 +1,28 @@
+step 1. 
+
+docker build -t nodeHeartBeat .
+
+step 2. 
+
+Docker Hub
+
+docker tag nodeHeartBeat yourdockerhub/nodeHeartBeat
+docker push yourdockerhub/nodeHeartBeat
+
+Private registry
+
+registry.yourdomain.com/nodeHeartBeat
+
+///user install
+
+step 5. Build your Monte Carlo node image
+    docker pull yourdockerhub/nodeHeartBeat
+
+step 6. Run the compute node
+    docker run -d \
+    --restart unless-stopped \
+    --gpus all \
+    --name nodeHeartBeat \
+    yourdockerhub/nodeHeartBeat
+
+    docker build -t duction_node_heartbeat . && docker tag duction_node_heartbeat osemu/duction_node_heartbeat && docker push osemu/duction_node_heartbeat
