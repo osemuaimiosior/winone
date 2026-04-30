@@ -1,0 +1,437 @@
+const licenseDB = require("../../config/model/licensedb");
+const licensingClientDB = require("../../config/model/licensingClient");
+const crypto = require('crypto');
+
+const pendingActivities = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const userDetails = await licensingClientDB.findOne({
+      where: { id: userId }
+    });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    }
+
+    const user = userDetails.email;
+    const licenseDBUserDetails = await licenseDB.findOne({
+      where: { email: user }
+    });
+
+   if (!licenseDBUserDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    }
+
+    const pendingCount = (licenseDBUserDetails.licensingLogs || [])
+    .filter(log => log.status === "pending")
+    .length;
+
+
+    return res.json({
+      StatusCode: 200,
+      Message: "success",
+      data: pendingCount
+    });
+
+  } catch (err) {
+    console.error("getUserNodes error:", err);
+
+    return res.status(500).json({
+      StatusCode: 500,
+      message: "Failed to fetch user nodes",
+    });
+  }
+};
+
+const reccuringSubCount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const userDetails = await licensingClientDB.findOne({
+      where: { id: userId }
+    });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    }
+
+    const user = userDetails.email;
+    const licenseDBUserDetails = await licenseDB.findOne({
+      where: { email: user }
+    });
+
+   if (!licenseDBUserDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    };
+
+    const reccuringSubCount = (licenseDBUserDetails.serviceSub || []).length;
+
+
+    return res.json({
+      StatusCode: 200,
+      Message: "success",
+      data: reccuringSubCount
+    });
+
+  } catch (err) {
+    console.error("getUserNodes error:", err);
+
+    return res.status(500).json({
+      StatusCode: 500,
+      message: "Failed to fetch user nodes",
+    });
+  }
+};
+
+// const walletDeposit = async (req, res) => {
+  
+//   try {
+
+//     const userId = req.user.id;
+//     const _amount = req.body.AMOUNT;
+
+//     if(!_amount){
+//         return res.status(404).json({
+//             StatusCode: 404,
+//             Message: "failed",
+//             Data: "requird amount input data missing"
+//         });
+//     };
+
+//     const userDetails = await licensingClientDB.findOne({
+//       where: { id: userId }
+//     });
+
+//     if (!userDetails) {
+//       return res.status(404).json({
+//         StatusCode: 404,
+//         Message: "failed",
+//         Data: { Message: "User not found" }
+//       });
+//     }
+
+//     const user = userDetails.email;
+//     const licenseDBUserDetails = await licenseDB.findOne({
+//       where: { email: user }
+//     });
+
+//    if (!licenseDBUserDetails) {
+//       return res.status(404).json({
+//         StatusCode: 404,
+//         Message: "failed",
+//         Data: { Message: "User not found" }
+//       });
+//     };
+
+//     // let wbalance = licenseDBUserDetails.walletBalance;
+//     licenseDBUserDetails.walletBalance += _amount;
+//     // wbalance += _amount;
+//     // licenseDBUserDetails.walletBalance = wbalance;
+//     await licenseDBUserDetails.save();
+
+//     return res.json({
+//       StatusCode: 200,
+//       Message: "success",
+//       data: "wallet balance updated"
+//     });
+
+//   } catch (err) {
+//     console.error("wallet balance error:", err);
+
+//     return res.status(500).json({
+//       StatusCode: 500,
+//       message: "Failed to update wallet balance",
+//     });
+//   }
+// };
+
+const addWalletTxn = async (req, res) => {
+  
+  try {
+
+    const userId = req.user.id;
+    const _kind = req.body.KIND;
+    const _amount = req.body.AMOUNT;
+    const _description = req.body.DESCRIPTION;
+
+    console.log("kind: ", _kind);
+
+    if (!_kind || !_amount || !_description) {
+      return res.status(400).json({
+        StatusCode: 400,
+        Message: "failed",
+        Data: "Please input all required details"
+      });
+    }
+
+    if (_kind === "deposit"){
+
+      const data = {
+        id: crypto.randomUUID(),
+        kind: _kind,
+        amount: _amount,
+        description: _description,
+        createdAt: new Date().toISOString()
+      }
+
+      const userDetails = await licensingClientDB.findOne({
+        where: { id: userId }
+      });
+
+      if (!userDetails) {
+        return res.status(404).json({
+          StatusCode: 404,
+          Message: "failed",
+          Data: { Message: "User not found" }
+        });
+      }
+
+      const user = userDetails.email;
+      const licenseDBUserDetails = await licenseDB.findOne({
+        where: { email: user }
+      });
+
+    if (!licenseDBUserDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    }
+
+    // ✅ This now runs correctly
+    const logs = Array.isArray(licenseDBUserDetails.walletTrxLogs)
+      ? licenseDBUserDetails.walletTrxLogs
+      : [];
+
+    logs.push(data);
+    // console.log("logs: ", logs)
+
+    licenseDBUserDetails.walletTrxLogs = logs;
+    licenseDBUserDetails.walletBalance += _amount;
+
+    await licenseDBUserDetails.save();
+    // console.log("licenseDBUserDetails: ", licenseDBUserDetails);
+
+    return res.json({
+      StatusCode: 200,
+      Message: "success",
+    });
+      
+    } else if (_kind === "charge") {
+
+      const data = {
+          id: crypto.randomUUID(),
+          kind: _kind,
+          amount: _amount,
+          description: _description,
+          createdAt: new Date().toISOString()
+      }
+
+      const userDetails = await licensingClientDB.findOne({
+        where: { id: userId }
+      });
+
+      if (!userDetails) {
+        return res.status(404).json({
+          StatusCode: 404,
+          Message: "failed",
+          Data: { Message: "User not found" }
+        });
+      }
+
+      const user = userDetails.email;
+      const licenseDBUserDetails = await licenseDB.findOne({
+        where: { email: user }
+      });
+
+    if (!licenseDBUserDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    };
+
+    licenseDBUserDetails.walletTrxLogs.push(data);
+    licenseDBUserDetails.walletBalance -= _amount;
+
+    await licenseDBUserDetails.save();
+
+    return res.json({
+      StatusCode: 200,
+      Message: "success",
+    });
+    };
+
+  } catch (err) {
+    console.error("getUserNodes error:", err);
+
+    return res.status(500).json({
+      StatusCode: 500,
+      message: "Failed to fetch user details",
+    });
+  }
+};
+
+const addActivity = async (req, res) => {
+  
+  try {
+
+    const userId = req.user.id;
+
+    const _kind = req.body.KIND;
+    const _type = req.body.TYPE;
+    const _service = req.body.SERVICE;
+    const _service_label = req.body.SERVICE_LABEL;
+    const _title = req.body.TITLE;
+    const _details = req.body.DETAILS;
+    const _fee = req.body.FEE;
+
+    if(!_kind || !_type || !_service || !_service_label || !_title || !_details || !_fee){
+        return res.status(404).json({
+            StatusCode: 404,
+            Message: "failed",
+            Data: "requird input data missing"
+        });
+    };
+
+    const data = {
+        id: crypto.randomUUID(),
+        type: _type,
+        service: _service,
+        serviceLabel: _service_label,
+        title: _title,
+        details: _details,
+        status: "pending",
+        fee: _fee,
+        createdAt: new Date().toISOString()
+    }
+
+    const userDetails = await licensingClientDB.findOne({
+      where: { id: userId }
+    });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    }
+
+    const user = userDetails.email;
+    const licenseDBUserDetails = await licenseDB.findOne({
+      where: { email: user }
+    });
+
+   if (!licenseDBUserDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+
+      licenseDBUserDetails.licensingLogs.push(data);
+      await licenseDBUserDetails.save();
+
+      return res.json({
+        StatusCode: 200,
+        Message: "success"
+      });
+    };
+
+  } catch (err) {
+    console.error("getUserNodes error:", err);
+
+    return res.status(500).json({
+      StatusCode: 500,
+      message: "Failed to fetch user nodes",
+    });
+  }
+};
+
+const getUserData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!userId) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: "User ID missing"
+      });
+    }
+
+    const userDetails = await licensingClientDB.findOne({
+      where: { id: userId }
+    });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "User not found" }
+      });
+    }
+
+    const licenseDBUserDetails = await licenseDB.findOne({
+      where: { email: userDetails.email }
+    });
+
+    if (!licenseDBUserDetails) {
+      return res.status(404).json({
+        StatusCode: 404,
+        Message: "failed",
+        Data: { Message: "License data not found" }
+      });
+    }
+
+    // ✅ ALWAYS return here if everything is fine
+    return res.json({
+      StatusCode: 200,
+      Message: "success",
+      userData: {
+        id: userDetails.id,
+        email: userDetails.email,
+        phoneNumber: userDetails.phoneNumber,
+        fullName: userDetails.fullName,
+        accessToken: req.headers.authorization?.split(" ")[1],
+        licensingData: licenseDBUserDetails
+      }
+    });
+
+  } catch (err) {
+    console.error("getUserData error:", err);
+
+    return res.status(500).json({
+      StatusCode: 500,
+      message: "Failed to fetch user data",
+    });
+  }
+};
+module.exports = { 
+    pendingActivities,
+    reccuringSubCount,
+    addWalletTxn,
+    // walletDeposit,
+    addActivity,
+    getUserData
+ };

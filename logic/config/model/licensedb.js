@@ -20,36 +20,26 @@ const sequelize = require('../db/postgresCloud');
 
     walletTrxLogs: {
       type: DataTypes.JSONB,
-      allowNull: false,
+      allowNull: true,
       defaultValue: []
-    },
-
-    pendingActivities: {
-      type: DataTypes.INTEGER,
-      allowNull: false
     },
 
     serviceSub: {
       type: DataTypes.JSONB,
-      allowNull: false,
+      allowNull: true,
       defaultValue: []
     },
 
     vehicleDetails: {
       type: DataTypes.JSONB,
-      allowNull: false,
+      allowNull: true,
       defaultValue: []
     },
 
     licensingLogs: {
       type: DataTypes.JSONB,
-      allowNull: false,
+      allowNull: true,
       defaultValue: []
-    },
-
-    revokedAt: {
-      type: DataTypes.DATE,
-      allowNull: true
     },
 
     lastLoginAt: {

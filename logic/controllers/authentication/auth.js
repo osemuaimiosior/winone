@@ -320,7 +320,7 @@ const licensingSignUp  = async (req, res) => {
     try {
         console.log("got to step 3")
         
-        const newUserSignUp = await licensingClientModel.create({
+        const newUserSignUpOne = await licensingClientModel.create({
         //   'id': uuid(),
           'createdAt': new Date(),
           'lastLoginAt': new Date(),
@@ -332,9 +332,23 @@ const licensingSignUp  = async (req, res) => {
         });
 
         console.log("got to step 6");
-        // console.log("New client details: ", newUserSignUp);
+        // console.log("New client details: ", newUserSignUpOne);
 
-        await newUserSignUp.save();
+        await newUserSignUpOne.save();
+
+        const newUserSignUpTwo = await licensedbModel.create({
+        //   'id': uuid(),
+          'createdAt': new Date(),
+          'lastLoginAt': new Date(),
+          'updatedAt': new Date(),
+          'email': _email,
+          'walletBalance': Number(0.00)
+        });
+
+        console.log("got to step 6");
+        // console.log("New client details: ", newUserSignUpTwo);
+
+        await newUserSignUpTwo.save();
 
         delete req.body.EMAIL;
         delete req.body.PHONE;
@@ -344,7 +358,7 @@ const licensingSignUp  = async (req, res) => {
         
         return res.json({
             "StatusCode": 200,
-            "Message": newUserSignUp
+            "Message": newUserSignUpOne
         });
 
     } catch (e) {
