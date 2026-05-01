@@ -284,7 +284,8 @@ const logOut = async (req, res) => {
     //res.redirect('/phoneLogin.html');
     };
 
-const licensingSignUp  = async (req, res) => {
+
+    const licensingSignUp  = async (req, res) => {
     
     console.log("started"); 
     const _firstName = req.body.FIRST_NAME;
@@ -381,7 +382,8 @@ const licensingSignUp  = async (req, res) => {
     };
     };
 
-const signUp = async (req, res) => {
+
+    const signUp = async (req, res) => {
     
     console.log("started"); 
     const _firstName = req.body.FIRST_NAME;

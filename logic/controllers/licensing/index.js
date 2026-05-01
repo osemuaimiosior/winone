@@ -166,10 +166,22 @@ const addWalletTxn = async (req, res) => {
   
   try {
 
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        error: "UNAUTHORIZED"
+      });
+    };
+
     const userId = req.user.id;
     const _kind = req.body.KIND;
     const _amount = req.body.AMOUNT;
     const _description = req.body.DESCRIPTION;
+
+    if (_amount <= 0) {
+      return res.status(400).json({
+        error: "INVALID_AMOUNT"
+      });
+    };
 
     console.log("kind: ", _kind);
 
@@ -216,15 +228,12 @@ const addWalletTxn = async (req, res) => {
       });
     }
 
-    // ✅ This now runs correctly
     const logs = Array.isArray(licenseDBUserDetails.walletTrxLogs)
       ? licenseDBUserDetails.walletTrxLogs
       : [];
 
-    logs.push(data);
-    // console.log("logs: ", logs)
-
-    licenseDBUserDetails.walletTrxLogs = logs;
+    licenseDBUserDetails.walletTrxLogs = [...logs, data];
+    licenseDBUserDetails.changed('walletTrxLogs', true);
     licenseDBUserDetails.walletBalance += _amount;
 
     await licenseDBUserDetails.save();
@@ -262,15 +271,20 @@ const addWalletTxn = async (req, res) => {
         where: { email: user }
       });
 
-    if (!licenseDBUserDetails) {
+     if (!licenseDBUserDetails) {
       return res.status(404).json({
         StatusCode: 404,
         Message: "failed",
         Data: { Message: "User not found" }
       });
-    };
+    }
 
-    licenseDBUserDetails.walletTrxLogs.push(data);
+    const logs = Array.isArray(licenseDBUserDetails.walletTrxLogs)
+      ? licenseDBUserDetails.walletTrxLogs
+      : [];
+
+    licenseDBUserDetails.walletTrxLogs = [...logs, data];
+    licenseDBUserDetails.changed('walletTrxLogs', true);
     licenseDBUserDetails.walletBalance -= _amount;
 
     await licenseDBUserDetails.save();
@@ -368,6 +382,66 @@ const addActivity = async (req, res) => {
   }
 };
 
+// const getUserData = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+
+//     if (!userId) {
+//       return res.status(404).json({
+//         StatusCode: 404,
+//         Message: "failed",
+//         Data: "User ID missing"
+//       });
+//     }
+
+//     const userDetails = await licensingClientDB.findOne({
+//       where: { id: userId }
+//     });
+
+//     if (!userDetails) {
+//       return res.status(404).json({
+//         StatusCode: 404,
+//         Message: "failed",
+//         Data: { Message: "User not found" }
+//       });
+//     }
+
+//     const licenseDBUserDetails = await licenseDB.findOne({
+//       where: { email: userDetails.email }
+//     });
+
+//     if (!licenseDBUserDetails) {
+//       return res.status(404).json({
+//         StatusCode: 404,
+//         Message: "failed",
+//         Data: { Message: "License data not found" }
+//       });
+//     }
+
+//     // ✅ ALWAYS return here if everything is fine
+//     return res.json({
+//       StatusCode: 200,
+//       Message: "success",
+//       userData: {
+//         id: userDetails.id,
+//         email: userDetails.email,
+//         phoneNumber: userDetails.phoneNumber,
+//         fullName: userDetails.fullName,
+//         accessToken: req.headers.authorization?.split(" ")[1],
+//         licensingData: licenseDBUserDetails
+//       }
+//     });
+
+//   } catch (err) {
+//     console.error("getUserData error:", err);
+
+//     return res.status(500).json({
+//       StatusCode: 500,
+//       message: "Failed to fetch user data",
+//     });
+//   }
+// };
+
 const getUserData = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -400,11 +474,10 @@ const getUserData = async (req, res) => {
       return res.status(404).json({
         StatusCode: 404,
         Message: "failed",
-        Data: { Message: "License data not found" }
+        Data: { Message: "User not found in license DB" }
       });
     }
 
-    // ✅ ALWAYS return here if everything is fine
     return res.json({
       StatusCode: 200,
       Message: "success",
@@ -420,13 +493,13 @@ const getUserData = async (req, res) => {
 
   } catch (err) {
     console.error("getUserData error:", err);
-
     return res.status(500).json({
       StatusCode: 500,
       message: "Failed to fetch user data",
     });
   }
 };
+
 module.exports = { 
     pendingActivities,
     reccuringSubCount,
