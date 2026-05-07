@@ -1,9 +1,9 @@
 package api
 
 import (
-	message "api-gateway/message"
 	"encoding/json"
 	"net/http"
+	message "winone-hpc/message"
 )
 
 func writeError(w http.ResponseWriter, msg string, code int32) {

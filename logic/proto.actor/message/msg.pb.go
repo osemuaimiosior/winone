@@ -209,6 +209,203 @@ func (x *NewJobRequest) GetNumSim() int32 {
 	return 0
 }
 
+type NewJobResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Code   int32  `protobuf:"varint,1,opt,name=Code,proto3" json:"Code,omitempty"`
+	Result string `protobuf:"bytes,2,opt,name=Result,proto3" json:"Result,omitempty"`
+}
+
+func (x *NewJobResponse) Reset() {
+	*x = NewJobResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_msg_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NewJobResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NewJobResponse) ProtoMessage() {}
+
+func (x *NewJobResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NewJobResponse.ProtoReflect.Descriptor instead.
+func (*NewJobResponse) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *NewJobResponse) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *NewJobResponse) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
+type Error struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Code    int32  `protobuf:"varint,1,opt,name=Code,proto3" json:"Code,omitempty"`
+	Message string `protobuf:"bytes,2,opt,name=Message,proto3" json:"Message,omitempty"`
+}
+
+func (x *Error) Reset() {
+	*x = Error{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_msg_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Error) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Error) ProtoMessage() {}
+
+func (x *Error) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Error.ProtoReflect.Descriptor instead.
+func (*Error) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Error) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *Error) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type OptionsRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	SpotPrice    float64 `protobuf:"fixed64,1,opt,name=SpotPrice,proto3" json:"SpotPrice,omitempty"`
+	StrikePrice  float64 `protobuf:"fixed64,2,opt,name=StrikePrice,proto3" json:"StrikePrice,omitempty"`
+	Volatility   float64 `protobuf:"fixed64,3,opt,name=Volatility,proto3" json:"Volatility,omitempty"`
+	RiskFreeRate float64 `protobuf:"fixed64,4,opt,name=RiskFreeRate,proto3" json:"RiskFreeRate,omitempty"`
+	Maturity     float64 `protobuf:"fixed64,5,opt,name=Maturity,proto3" json:"Maturity,omitempty"`
+	Simulations  int32   `protobuf:"varint,6,opt,name=Simulations,proto3" json:"Simulations,omitempty"`
+}
+
+func (x *OptionsRequest) Reset() {
+	*x = OptionsRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_msg_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *OptionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OptionsRequest) ProtoMessage() {}
+
+func (x *OptionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OptionsRequest.ProtoReflect.Descriptor instead.
+func (*OptionsRequest) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OptionsRequest) GetSpotPrice() float64 {
+	if x != nil {
+		return x.SpotPrice
+	}
+	return 0
+}
+
+func (x *OptionsRequest) GetStrikePrice() float64 {
+	if x != nil {
+		return x.StrikePrice
+	}
+	return 0
+}
+
+func (x *OptionsRequest) GetVolatility() float64 {
+	if x != nil {
+		return x.Volatility
+	}
+	return 0
+}
+
+func (x *OptionsRequest) GetRiskFreeRate() float64 {
+	if x != nil {
+		return x.RiskFreeRate
+	}
+	return 0
+}
+
+func (x *OptionsRequest) GetMaturity() float64 {
+	if x != nil {
+		return x.Maturity
+	}
+	return 0
+}
+
+func (x *OptionsRequest) GetSimulations() int32 {
+	if x != nil {
+		return x.Simulations
+	}
+	return 0
+}
+
 var File_msg_proto protoreflect.FileDescriptor
 
 var file_msg_proto_rawDesc = []byte{
@@ -229,8 +426,29 @@ var file_msg_proto_rawDesc = []byte{
 	0x05, 0x73, 0x69, 0x67, 0x6d, 0x61, 0x12, 0x0c, 0x0a, 0x01, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28,
 	0x01, 0x52, 0x01, 0x72, 0x12, 0x0c, 0x0a, 0x01, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x01, 0x52,
 	0x01, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x6e, 0x75, 0x6d, 0x53, 0x69, 0x6d, 0x18, 0x06, 0x20, 0x01,
-	0x28, 0x05, 0x52, 0x06, 0x6e, 0x75, 0x6d, 0x53, 0x69, 0x6d, 0x42, 0x0b, 0x5a, 0x09, 0x2e, 0x3b,
-	0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x28, 0x05, 0x52, 0x06, 0x6e, 0x75, 0x6d, 0x53, 0x69, 0x6d, 0x22, 0x3c, 0x0a, 0x0e, 0x4e, 0x65,
+	0x77, 0x4a, 0x6f, 0x62, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04,
+	0x43, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x43, 0x6f, 0x64, 0x65,
+	0x12, 0x16, 0x0a, 0x06, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x06, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x35, 0x0a, 0x05, 0x45, 0x72, 0x72, 0x6f,
+	0x72, 0x12, 0x12, 0x0a, 0x04, 0x43, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52,
+	0x04, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22,
+	0xd2, 0x01, 0x0a, 0x0e, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x53, 0x70, 0x6f, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x01, 0x52, 0x09, 0x53, 0x70, 0x6f, 0x74, 0x50, 0x72, 0x69, 0x63, 0x65,
+	0x12, 0x20, 0x0a, 0x0b, 0x53, 0x74, 0x72, 0x69, 0x6b, 0x65, 0x50, 0x72, 0x69, 0x63, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x01, 0x52, 0x0b, 0x53, 0x74, 0x72, 0x69, 0x6b, 0x65, 0x50, 0x72, 0x69,
+	0x63, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x56, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74, 0x79,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x01, 0x52, 0x0a, 0x56, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69,
+	0x74, 0x79, 0x12, 0x22, 0x0a, 0x0c, 0x52, 0x69, 0x73, 0x6b, 0x46, 0x72, 0x65, 0x65, 0x52, 0x61,
+	0x74, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x01, 0x52, 0x0c, 0x52, 0x69, 0x73, 0x6b, 0x46, 0x72,
+	0x65, 0x65, 0x52, 0x61, 0x74, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x4d, 0x61, 0x74, 0x75, 0x72, 0x69,
+	0x74, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x01, 0x52, 0x08, 0x4d, 0x61, 0x74, 0x75, 0x72, 0x69,
+	0x74, 0x79, 0x12, 0x20, 0x0a, 0x0b, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0b, 0x53, 0x69, 0x6d, 0x75, 0x6c, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -245,11 +463,14 @@ func file_msg_proto_rawDescGZIP() []byte {
 	return file_msg_proto_rawDescData
 }
 
-var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_msg_proto_goTypes = []interface{}{
-	(*StartMessage)(nil),  // 0: message.StartMessage
-	(*StartResponse)(nil), // 1: message.StartResponse
-	(*NewJobRequest)(nil), // 2: message.NewJobRequest
+	(*StartMessage)(nil),   // 0: message.StartMessage
+	(*StartResponse)(nil),  // 1: message.StartResponse
+	(*NewJobRequest)(nil),  // 2: message.NewJobRequest
+	(*NewJobResponse)(nil), // 3: message.NewJobResponse
+	(*Error)(nil),          // 4: message.Error
+	(*OptionsRequest)(nil), // 5: message.OptionsRequest
 }
 var file_msg_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -301,6 +522,42 @@ func file_msg_proto_init() {
 				return nil
 			}
 		}
+		file_msg_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*NewJobResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_msg_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Error); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_msg_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*OptionsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -308,7 +565,7 @@ func file_msg_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_msg_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

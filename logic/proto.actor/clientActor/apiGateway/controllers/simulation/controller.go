@@ -1,15 +1,16 @@
 package simulation
 
 import (
-	// "fmt"
 	"encoding/json"
 	"errors"
+
+	// "fmt"
 	"net/http"
 	"time"
+	apiError "winone-hpc/clientActor/apiGateway/apiError"
+	core "winone-hpc/core"
 
-	apiError "api-gateway/error"
-
-	message "api-gateway/message"
+	message "winone-hpc/message"
 
 	"github.com/asynkron/protoactor-go/actor"
 	remote "github.com/asynkron/protoactor-go/remote"
@@ -18,7 +19,7 @@ import (
 var UnAuthorizedError = errors.New("Invalid auth token.")
 
 var (
-	system       = actor.NewActorSystem()
+	system       = core.CoreSystem()
 	config       = remote.Configure("127.0.0.1", 0)
 	remoteConfig = remote.NewRemote(system, config)
 	pid          = actor.NewPID("127.0.0.1:8090", "MasterNodeActor")

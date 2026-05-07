@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	// "log"
 	"os"
 	"strconv"
 	"time"
@@ -10,11 +10,20 @@ import (
 	"github.com/joho/godotenv"
 
 	core "winone-hpc/core"
-	"winone-hpc/message"
+	message "winone-hpc/message"
 	actors "winone-hpc/systemActor/nodeAdmin"
 
 	"github.com/asynkron/protoactor-go/actor"
 	remote "github.com/asynkron/protoactor-go/remote"
+
+	"net/http"
+	"winone-hpc/db"
+
+	handlers "winone-hpc/clientActor/apiGateway/controllers"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	log "github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -25,27 +34,42 @@ func init() {
 }
 
 func main() {
+
+	err := db.ConnectDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db.InitDB()
+
 	system := core.CoreSystem()
-	host := os.Getenv("MASTER_HOST")
+	// host := os.Getenv("MASTER_HOST")
 	portStr := os.Getenv("MASTER_PORT")
 
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		port = 8090 // fallback default
 	}
-
+	fmt.Println(port)
 	masterActorName := os.Getenv("MASTER_ACTOR")
 
 	//ONE remote config
-	config := remote.Configure(host, port)
-	r := remote.NewRemote(system, config)
-	r.Start()
+	// config := remote.Configure(host, port)
+	config := remote.Configure("127.0.0.1", 8090)
+	remoteActor := remote.NewRemote(system, config)
+	remoteActor.Start()
 
 	// Spawn MasterNodeActor
 	masterProps := actor.PropsFromProducer(func() actor.Actor {
 		return &actors.MasterNodeActor{}
 	})
-	masterPID, _ := system.Root.SpawnNamed(masterProps, masterActorName)
+	// masterPID, _ := system.Root.SpawnNamed(masterProps, masterActorName)
+	masterPID, err := system.Root.SpawnNamed(masterProps, masterActorName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(masterPID.Address)
 
 	now := time.Now().Unix()
 
@@ -59,6 +83,21 @@ func main() {
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return
+	}
+
+	log.SetReportCaller(true)
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	handlers.Handler(r)
+
+	fmt.Println("Starting system API on port :8000...")
+
+	serverErr := http.ListenAndServe("localhost:8000", r)
+	fmt.Println("API started...")
+	if serverErr != nil {
+		log.Error(serverErr)
 	}
 
 	fmt.Printf("Got response: %v\n", result1)

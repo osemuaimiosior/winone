@@ -5,24 +5,27 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"api-gateway/db"
 	"fmt"
 	"net/http"
+	"winone-hpc/db"
 
-	handlers "api-gateway/controllers"
+	handlers "winone-hpc/clientActor/apiGateway/controllers"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	log "github.com/sirupsen/logrus"
 )
 
-func main() {
+func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env")
+		log.Println("No .env file found")
 	}
+}
 
-	err = db.ConnectDB()
+func main() {
+
+	err := db.ConnectDB()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,12 +39,11 @@ func main() {
 
 	handlers.Handler(r)
 
-	fmt.Println("Starting system API...")
+	fmt.Println("Starting system API on port :8000...")
 
 	serverErr := http.ListenAndServe("localhost:8000", r)
+	fmt.Println("API started...")
 	if serverErr != nil {
-		log.Error(err)
+		log.Error(serverErr)
 	}
-
-	select {}
 }
