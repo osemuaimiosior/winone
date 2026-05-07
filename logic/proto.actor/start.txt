@@ -1,0 +1,5 @@
+create a <name>.proto file 
+
+then
+
+protoc --go_out=. start.proto
