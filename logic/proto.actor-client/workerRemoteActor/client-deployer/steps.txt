@@ -1,0 +1,8 @@
+step 1. 
+
+docker build -t clientdp . && docker tag clientdp osemu/clientdp && docker push osemu/clientdp
+
+docker run \
+     --restart unless-stopped \
+    --name clientdp \
+    osemu/clientdp

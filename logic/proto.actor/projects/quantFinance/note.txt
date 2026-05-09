@@ -1,0 +1,23 @@
+Applications:
+
+options pricing
+portfolio risk
+VaR (Value at Risk)
+derivatives pricing
+credit risk
+market stress testing
+interest rate modeling
+
+Examples:
+
+Black-Scholes Monte Carlo
+Heston model
+exotic options
+American options
+
+Industries:
+
+hedge funds
+banks
+prop trading firms
+insurance

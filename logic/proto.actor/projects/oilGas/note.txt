@@ -1,0 +1,19 @@
+Applications:
+
+underground fluid modeling
+reservoir uncertainty
+drilling optimization
+seismic interpretation
+
+Monte Carlo used for:
+
+pressure uncertainty
+production forecasting
+drilling success probability
+
+Customers:
+
+Shell
+Chevron
+Total
+Exxon

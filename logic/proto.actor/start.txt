@@ -3,3 +3,18 @@ create a <name>.proto file
 then
 
 protoc --go_out=. start.proto
+
+
+proto.actor
+Runs:
+
+scheduler
+job queue
+authentication
+billing
+orchestration
+
+
+tailsacle process (AWS EC2)
+
+1. curl -fsSL https://tailscale.com/install.sh | sh

@@ -43,7 +43,7 @@ func main() {
 	db.InitDB()
 
 	system := core.CoreSystem()
-	// host := os.Getenv("MASTER_HOST")
+	host := os.Getenv("MASTER_HOST")
 	portStr := os.Getenv("MASTER_PORT")
 
 	port, err := strconv.Atoi(portStr)
@@ -51,11 +51,13 @@ func main() {
 		port = 8090 // fallback default
 	}
 	fmt.Println(port)
+	fmt.Println(host)
+
 	masterActorName := os.Getenv("MASTER_ACTOR")
 
 	//ONE remote config
 	// config := remote.Configure(host, port)
-	config := remote.Configure("127.0.0.1", 8090)
+	config := remote.Configure("0.0.0.0", 8090, remote.WithAdvertisedHost("100.79.54.6"))
 	remoteActor := remote.NewRemote(system, config)
 	remoteActor.Start()
 
@@ -63,13 +65,14 @@ func main() {
 	masterProps := actor.PropsFromProducer(func() actor.Actor {
 		return &actors.MasterNodeActor{}
 	})
-	// masterPID, _ := system.Root.SpawnNamed(masterProps, masterActorName)
+
 	masterPID, err := system.Root.SpawnNamed(masterProps, masterActorName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(masterPID.Address)
+	fmt.Println(masterPID)
 
 	now := time.Now().Unix()
 
@@ -94,7 +97,7 @@ func main() {
 
 	fmt.Println("Starting system API on port :8000...")
 
-	serverErr := http.ListenAndServe("localhost:8000", r)
+	serverErr := http.ListenAndServe("0.0.0.0:8000", r)
 	fmt.Println("API started...")
 	if serverErr != nil {
 		log.Error(serverErr)

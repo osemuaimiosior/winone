@@ -1,0 +1,11 @@
+Applications:
+
+molecular simulation
+protein folding probabilities
+reaction modeling
+candidate screening
+
+Monte Carlo used for:
+
+stochastic molecular dynamics
+probabilistic interaction models

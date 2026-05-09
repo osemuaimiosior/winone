@@ -1,0 +1,12 @@
+Applications:
+
+missile trajectory uncertainty
+radar signal analysis
+flight safety
+spacecraft reliability
+
+Monte Carlo is heavily used in:
+
+NASA
+defense contractors
+avionics
