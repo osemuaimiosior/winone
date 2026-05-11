@@ -1,0 +1,81 @@
+package main
+
+import (
+	"crypto/tls"
+	"flag"
+	"fmt"
+	"html"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+
+	"github.com/joho/godotenv"
+
+	"tailscale.com/tsnet"
+)
+
+var (
+	addr = flag.String("addr", ":80", "address to listen on")
+	// tsAuthKey = flag.String("ts-authkey", "", "Tailscale auth key")
+)
+
+func main() {
+
+	// Load .env if present
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
+	authKey := os.Getenv("TS_AUTHKEY")
+
+	// authKey := *tsAuthKey
+	if authKey == "" {
+		authKey = os.Getenv("TS_AUTHKEY")
+	}
+
+	if authKey == "" {
+		log.Fatal("TS_AUTHKEY is not set. Provide --ts-authkey or set TS_AUTHKEY in the environment.")
+	}
+
+	flag.Parse()
+	srv := new(tsnet.Server)
+	srv.AuthKey = authKey
+	// srv.AuthKey = *tsAuthKey
+	// srv.Dir = "/var/lib/tsnet" //<========= To  persistent state directory. This preserves identity across restarts.
+	defer srv.Close()
+	ln, err := srv.Listen("tcp", *addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
+
+	lc, err := srv.LocalClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if *addr == ":443" {
+		ln = tls.NewListener(ln, &tls.Config{
+			GetCertificate: lc.GetCertificate,
+		})
+	}
+
+	log.Fatal(http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		who, err := lc.WhoIs(r.Context(), r.RemoteAddr)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		fmt.Fprintf(w, "<html><body><h1>Hello, world!</h1>\n")
+		fmt.Fprintf(w, "<p>You are <b>%s</b> from <b>%s</b> (%s)</p>",
+			html.EscapeString(who.UserProfile.LoginName),
+			html.EscapeString(firstLabel(who.Node.ComputedName)),
+			r.RemoteAddr)
+	})))
+}
+
+func firstLabel(s string) string {
+	s, _, _ = strings.Cut(s, ".")
+	return s
+}

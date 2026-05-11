@@ -1,0 +1,14 @@
+step 1. 
+
+docker build -t clientdp . && docker tag clientdp osemu/clientdp && docker push osemu/clientdp
+
+// State persisitence
+docker run \
+  --env-file .env
+  --restart unless-stopped \
+  --name clientdp \
+  -e MACHINE_NAME=
+  -v clientdp-tsnet:/var/lib/tsnet \
+  osemu/clientdp
+
+docker run --env-file .env --restart unless-stopped --name clientdp osemu/clientdp

@@ -5,23 +5,32 @@ import (
 	// "log"
 	"os"
 	// "strconv"
-	"context"
 	"crypto/tls"
 	"flag"
 	"html"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
-	"tailscale.com/tsnet"
 
-	core "winone-hpc-worker/core"
-	message "winone-hpc-worker/message"
+	core "winone-hpc/core"
+	message "winone-hpc/message"
+	actors "winone-hpc/systemActor/nodeAdmin"
+
+	"context"
 
 	"github.com/asynkron/protoactor-go/actor"
 	remote "github.com/asynkron/protoactor-go/remote"
 
+	"net/http"
+	"winone-hpc/db"
+
+	"tailscale.com/tsnet"
+
+	handlers "winone-hpc/clientActor/apiGateway/controllers"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,17 +40,17 @@ var (
 
 func main() {
 
-	// Load .env for local development
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+	err1 := godotenv.Load()
+	if err1 != nil {
+		log.Println("No .env file found")
 	}
 
-	masterHost := os.Getenv("MASTER_PID_HOST")
-	if masterHost == "" {
-		log.Fatal("MASTER_PID_HOST is not set")
+	err := db.ConnectDB()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Println(masterHost)
+	db.InitDB()
 
 	///////////////////////////////////////////////////////// Tailscale setup start ////////////////////////////////////////////////
 
@@ -123,31 +132,61 @@ func main() {
 	////////////////////////////////////////////////// Tailscale setup stop /////////////////////////////////////////////////
 
 	system := core.CoreSystem()
+
+	masterActorName := os.Getenv("MASTER_ACTOR")
 	adIP := status.Self.TailscaleIPs[0]
 
-	config := remote.Configure("0.0.0.0", 8091, remote.WithAdvertisedHost(adIP.String()))
+	//ONE remote config
+	// config := remote.Configure(host, port)
+	config := remote.Configure("0.0.0.0", 8090, remote.WithAdvertisedHost(adIP.String()))
 	remoteActor := remote.NewRemote(system, config)
 	remoteActor.Start()
 
-	masterPID := actor.NewPID(masterHost, "MasterNodeActor")
-	// masterPID := actor.NewPID(masterHost, "MasterNodeActor")
+	// Spawn MasterNodeActor
+	masterProps := actor.PropsFromProducer(func() actor.Actor {
+		return &actors.MasterNodeActor{}
+	})
+
+	masterPID, err := system.Root.SpawnNamed(masterProps, masterActorName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(masterPID.Address)
+	fmt.Println(masterPID)
 
 	now := time.Now().Unix()
 
 	// Send ping and wait for reply using RequestFuture
-	future := system.Root.RequestFuture(masterPID, &message.StartMessage{
+	future1 := system.Root.RequestFuture(masterPID, &message.StartMessage{
 		StartUpNodeCount: 3,
 		StartDateUnix:    now,
 	}, 5*time.Second)
 
-	result, err := future.Result() // wait for response or timeout
+	result1, err := future1.Result() // wait for response or timeout
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return
 	}
 
-	fmt.Printf("Got response: %v\n", result)
+	log.SetReportCaller(true)
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
+	handlers.Handler(r)
+
+	fmt.Println("Starting system API on port :8000...")
+
+	serverErr := http.ListenAndServe("0.0.0.0:8000", r)
+	fmt.Println("API started...")
+	if serverErr != nil {
+		log.Error(serverErr)
+	}
+
+	fmt.Printf("Got response: %v\n", result1)
+
+	// fmt.Println("MasterNodeActor:", masterPID)
 	// fmt.Println("Running on 127.0.0.1:8090")
 }
 

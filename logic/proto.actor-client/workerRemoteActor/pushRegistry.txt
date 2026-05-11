@@ -1,8 +1,6 @@
 step 1. 
 
-docker build -t winone-hpc-worker .
-
-docker tag winone-hpc-worker osemu/winone-hpc-worker && docker push osemu/winone-hpc-worker
+docker build -t winone-hpc-worker . && docker tag winone-hpc-worker osemu/winone-hpc-worker && docker push osemu/winone-hpc-worker
 
 docker run \
      --network host \

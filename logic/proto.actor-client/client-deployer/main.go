@@ -1,28 +1,18 @@
 package main
 
 import (
-	"fmt"
-	// "log"
-	"os"
-	// "strconv"
 	"context"
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"html"
+	"log"
 	"net/http"
+	"os"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 	"tailscale.com/tsnet"
-
-	core "winone-hpc-worker/core"
-	message "winone-hpc-worker/message"
-
-	"github.com/asynkron/protoactor-go/actor"
-	remote "github.com/asynkron/protoactor-go/remote"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -30,20 +20,10 @@ var (
 )
 
 func main() {
-
 	// Load .env for local development
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	}
-
-	masterHost := os.Getenv("MASTER_PID_HOST")
-	if masterHost == "" {
-		log.Fatal("MASTER_PID_HOST is not set")
-	}
-
-	fmt.Println(masterHost)
-
-	///////////////////////////////////////////////////////// Tailscale setup start ////////////////////////////////////////////////
 
 	flag.Parse()
 
@@ -120,35 +100,7 @@ func main() {
 			r.RemoteAddr)
 	})))
 
-	////////////////////////////////////////////////// Tailscale setup stop /////////////////////////////////////////////////
-
-	system := core.CoreSystem()
-	adIP := status.Self.TailscaleIPs[0]
-
-	config := remote.Configure("0.0.0.0", 8091, remote.WithAdvertisedHost(adIP.String()))
-	remoteActor := remote.NewRemote(system, config)
-	remoteActor.Start()
-
-	masterPID := actor.NewPID(masterHost, "MasterNodeActor")
-	// masterPID := actor.NewPID(masterHost, "MasterNodeActor")
-
-	now := time.Now().Unix()
-
-	// Send ping and wait for reply using RequestFuture
-	future := system.Root.RequestFuture(masterPID, &message.StartMessage{
-		StartUpNodeCount: 3,
-		StartDateUnix:    now,
-	}, 5*time.Second)
-
-	result, err := future.Result() // wait for response or timeout
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
-	}
-
-	fmt.Printf("Got response: %v\n", result)
-
-	// fmt.Println("Running on 127.0.0.1:8090")
+	///Start actor
 }
 
 func firstLabel(s string) string {
