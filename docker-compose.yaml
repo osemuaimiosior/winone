@@ -9,7 +9,7 @@ services:
     restart: always
 
   frontend:
-    build: ./reactApp/dowie-node
+    build: ./dowie-node
     container_name: frontend
     ports:
       - "80:80"

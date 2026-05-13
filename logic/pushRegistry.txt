@@ -1,0 +1,19 @@
+step 1. 
+
+docker build -t winone . && docker tag winone osemu/winone && docker push osemu/winone
+
+docker run \
+    -p 3000:3000 \
+    -p 50051:50051 \
+    -p 50052:50052 \
+    -p 50053:50053 \
+    -p 50054:50054 \
+    --restart unless-stopped \
+    --name winone \
+    osemu/winone
+
+Private registry
+registry.yourdomain.com/winone
+
+//message
+protoc --go_out=. --go-grpc_out=. msg.proto
