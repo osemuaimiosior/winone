@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	message "winone-hpc/message"
+	message "winone-hpc/server/message"
 )
 
 func writeError(w http.ResponseWriter, msg string, code int32) {

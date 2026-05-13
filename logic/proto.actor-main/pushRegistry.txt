@@ -5,8 +5,13 @@ docker build -t winone-hpc . && docker tag winone-hpc osemu/winone-hpc && docker
 sudo docker run \
     --network host \
     --restart unless-stopped \
+    -e MACHINE_NAME=winone-hpc \
+    -e TS_AUTHKEY=tskey-auth-kKhueckQwn11CNTRL-viDaFhtmrHE9K4FsWcfaHEGr7rtT9PFc \
     --name winone-hpc \
     osemu/winone-hpc
 
 Private registry
 registry.yourdomain.com/winone-hpc
+
+//message
+protoc --go_out=. --go-grpc_out=. msg.proto

@@ -7,10 +7,10 @@ import (
 	// "fmt"
 	"net/http"
 	"time"
-	apiError "winone-hpc/clientActor/apiGateway/apiError"
+	apiError "winone-hpc/apiGateway/apiError"
 	core "winone-hpc/core"
 
-	message "winone-hpc/message"
+	message "winone-hpc/server/message"
 
 	"github.com/asynkron/protoactor-go/actor"
 	remote "github.com/asynkron/protoactor-go/remote"

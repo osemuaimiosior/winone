@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	apiError "winone-hpc/clientActor/apiGateway/apiError"
+	apiError "winone-hpc/apiGateway/apiError"
 	"winone-hpc/db"
 
 	log "github.com/sirupsen/logrus"

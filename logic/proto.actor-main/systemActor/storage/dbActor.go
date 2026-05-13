@@ -2,7 +2,7 @@ package storage
 
 import (
 	"fmt"
-	"winone-hpc/message"
+	"winone-hpc/server/message"
 
 	"github.com/asynkron/protoactor-go/actor"
 )

@@ -13,14 +13,16 @@ const {loginLimiter, signUpLimiter} = require('../middleware/rateLimiter');
 
 
 router.route('/account-login').post(loginLimiter, login);
-router.route('/licensing/account-login').post(loginLimiter, licensingLogin);
 router.route('/account-logout').post(verifyJWT, logOut);
 router.route('/account-signup').post(signUpLimiter, signUp);
+router.route('/refresh-token').post(refreshTokenHandler);
+
+router.route('/licensing/account-login').post(loginLimiter, licensingLogin);
 router.route('/licensing/account-signup').post(signUpLimiter, licensingSignUp);
 router.route('/licensing/new-wallet-txn').post(verifyJWT, addWalletTxn);
 router.route('/licensing/new-licensing-act').post(verifyJWT, addActivity);
 router.route('/licensing/get-user').get(verifyJWT, getUserData);
-router.route('/refresh-token').post(refreshTokenHandler);
+
 
 router.get("/get-user-nodes", verifyJWT, getUserNodes);
 

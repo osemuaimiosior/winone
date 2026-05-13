@@ -2,7 +2,7 @@ package actors
 
 import (
 	"fmt"
-	message "winone-hpc/message"
+	message "winone-hpc/server/message"
 
 	// core "wineone-hpc/core"
 	"github.com/asynkron/protoactor-go/actor"

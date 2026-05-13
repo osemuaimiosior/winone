@@ -3,7 +3,7 @@ package controllers
 import (
 	// "fmt"
 
-	simulation "winone-hpc/clientActor/apiGateway/controllers/simulation"
+	simulation "winone-hpc/apiGateway/controllers/simulation"
 
 	"github.com/go-chi/chi"
 	chimiddle "github.com/go-chi/chi/middleware"

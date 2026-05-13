@@ -304,7 +304,7 @@ async function getCPUStat(NODE_CODE, HOST_NAME){
 
     });
 
-    // console.log("heartBeatSignal: ", feedback)
+    console.log("heartBeatSignal: ", feedback)
      
     // if (!feedback.data) {
     //     console.log(`POST request failed from line 251 of heartBeat.js file: ${feedback.status} ${feedback.statusText}`);

@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package systemMessage;
+
+service controlpanel {
+
+  rpc NewJobService(NewJobRequest) returns (NewJobResponse) {}
+  rpc StartMsg(StartMessage) returns (StartResponse) {}
+}
+
+message StartMessage {
+  int32 startUpNodeCount = 1;
+  int64 startDateUnix = 2;
+}
+
+message StartResponse {
+  string message = 1;
+}
+
+message NewJobRequest {
+  double SpotPrice = 1;
+  double StrikePrice = 2;
+  double Volatility = 3;
+  double RiskFreeRate = 4;
+  double Maturity = 5;
+  int32 Simulations = 6;     
+}
+
+message NewJobResponse {
+	int32 Code = 1;
+	string Result = 2;
+}
+
+message Error {
+	int32 Code = 1;
+	string Message = 2;
+}
+
+message OptionsRequest {
+  double SpotPrice = 1;
+  double StrikePrice = 2;
+  double Volatility = 3;
+  double RiskFreeRate = 4;
+  double Maturity = 5;
+  int32 Simulations = 6;
+}

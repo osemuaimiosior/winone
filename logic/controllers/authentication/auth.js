@@ -74,6 +74,7 @@ const login = async (req, res) => {
       });
     }
 
+    // const isMatch = await bcrypt.compare(UserDetails.passwordHashed, PASSWORD);
     const isMatch = await bcrypt.compare(PASSWORD, UserDetails.passwordHashed);
 
     if (!isMatch) {

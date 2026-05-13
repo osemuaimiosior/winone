@@ -1,8 +1,11 @@
 syntax = "proto3";
 
-package message;
+package systemMessage;
 
-option go_package = "message";
+service controlpanel {
+
+  rpc NewJobServiceClient() returns () {}
+}
 
 message StartMessage {
   int32 startUpNodeCount = 1;

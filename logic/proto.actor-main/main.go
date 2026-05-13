@@ -5,16 +5,17 @@ import (
 	// "log"
 	"os"
 	// "strconv"
-	"crypto/tls"
+	// "crypto/tls"
 	"flag"
-	"html"
+
+	// "html"
 	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
 
 	core "winone-hpc/core"
-	message "winone-hpc/message"
+	message "winone-hpc/server/message"
 	actors "winone-hpc/systemActor/nodeAdmin"
 
 	"context"
@@ -25,9 +26,7 @@ import (
 	"net/http"
 	"winone-hpc/db"
 
-	"tailscale.com/tsnet"
-
-	handlers "winone-hpc/clientActor/apiGateway/controllers"
+	handlers "winone-hpc/apiGateway/controllers"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -51,94 +50,17 @@ func main() {
 	}
 
 	db.InitDB()
-
-	///////////////////////////////////////////////////////// Tailscale setup start ////////////////////////////////////////////////
-
-	flag.Parse()
-
-	// Read auth key
-	authKey := os.Getenv("TS_AUTHKEY")
-	if authKey == "" {
-		log.Fatal("TS_AUTHKEY is not set")
-	}
-
-	machineName := os.Getenv("MACHINE_NAME")
-	if machineName == "" {
-		log.Fatal("TS_AUTHKEY is not set")
-	}
-
-	nodeName := flag.String("hostname", machineName, "Tailscale machine name")
-
-	// Allow hostname override from environment
-	if envName := os.Getenv("TS_HOSTNAME"); envName != "" {
-		*nodeName = envName
-	}
-
-	// Create tsnet server
-	srv := &tsnet.Server{
-		AuthKey:  authKey,
-		Hostname: *nodeName,      // Custom machine name in Tailscale
-		Dir:      "./tsnet-data", // Persist identity locally
-	}
-	defer srv.Close()
-
-	// Start listener (this also triggers login if needed)
-	ln, err := srv.Listen("tcp", *addr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ln.Close()
-
-	// Get local client
-	lc, err := srv.LocalClient()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Print machine information
-	status, err := lc.StatusWithoutPeers(mainContext())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("===================================")
-	fmt.Println("Your Machine Name:", strings.Split(status.Self.DNSName, ".")[0])
-	fmt.Println("Your Machine IPv4:", status.Self.TailscaleIPs[0])
-	// fmt.Println("All Tailscale IPs:", status.Self.TailscaleIPs[0])
-	fmt.Println("===================================")
-
-	// HTTPS support if listening on 443
-	if *addr == ":443" {
-		ln = tls.NewListener(ln, &tls.Config{
-			GetCertificate: lc.GetCertificate,
-		})
-	}
-
-	// Start HTTP server
-	log.Fatal(http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		who, err := lc.WhoIs(r.Context(), r.RemoteAddr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		fmt.Fprintf(w, "<html><body><h1>Hello, world!</h1>\n")
-		fmt.Fprintf(w, "<p>You are <b>%s</b> from <b>%s</b> (%s)</p>",
-			html.EscapeString(who.UserProfile.LoginName),
-			html.EscapeString(firstLabel(who.Node.ComputedName)),
-			r.RemoteAddr)
-	})))
-
 	////////////////////////////////////////////////// Tailscale setup stop /////////////////////////////////////////////////
 
 	system := core.CoreSystem()
 
 	masterActorName := os.Getenv("MASTER_ACTOR")
-	adIP := status.Self.TailscaleIPs[0]
 
-	//ONE remote config
-	// config := remote.Configure(host, port)
-	config := remote.Configure("0.0.0.0", 8090, remote.WithAdvertisedHost(adIP.String()))
+	config := remote.Configure(
+		"0.0.0.0",
+		8090,
+	)
+
 	remoteActor := remote.NewRemote(system, config)
 	remoteActor.Start()
 
