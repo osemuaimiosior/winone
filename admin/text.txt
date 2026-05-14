@@ -1,0 +1,2 @@
+passcode=nodgpu-admin
+VITE_ADMIN_API_TOKEN=
