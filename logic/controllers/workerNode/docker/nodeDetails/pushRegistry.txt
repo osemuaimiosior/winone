@@ -1,9 +1,4 @@
-docker build -t duction_node_details . && docker tag duction_node_details osemu/duction_node_details && docker push osemu/duction_node_details
+docker build -t winone_node_details . && docker tag winone_node_details osemu/winone_node_details && docker push osemu/winone_node_details
 
-docker run -d \
-    --restart unless-stopped \
-    -e USER_AUTH=
-    -e QUEUE_SERVER_ADDRESS=54.87.128.57:50052 \
-    -e REGISTRY_SERVER_ADDRESS=54.87.128.57:50053 \
-    --name duction_node_details \
-    osemu/duction_node_details
+
+docker run --restart unless-stopped -e USER_AUTH=dc_live_08227ae9.5e9d6076aa0033b28445dd9ce0940fe43d3eff887ae4bd16defac3aff1946d76 -e QUEUE_SERVER_ADDRESS=52.90.249.116:50052 -e REGISTRY_SERVER_ADDRESS=52.90.249.116:50053 -v -v $(pwd)/winone-data:/data/winone --name winone_node_details osemu/winone_node_details

@@ -84,6 +84,11 @@ const NodeState = sequelize.define("NodeState", {
       defaultValue: "idle"
     },
 
+    machineFingerprint: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+
     nodeScore: {
       type: DataTypes.FLOAT,
       allowNull: true
@@ -101,7 +106,8 @@ const NodeState = sequelize.define("NodeState", {
       { fields: ["nodeStatus"] },
       { fields: ["jobStatus"] },
       { fields: ["lastHeartbeat"] },
-      { fields: ["nodeScore"] }
+      { fields: ["nodeScore"] },
+      { fields: ["machineFingerprint"] },
     ]
 });
 

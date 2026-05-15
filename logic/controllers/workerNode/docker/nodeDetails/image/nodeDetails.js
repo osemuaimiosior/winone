@@ -35,11 +35,72 @@ function run(cmd) {
   execSync(cmd, { stdio: "inherit" });
 }
 
-const NODE_ID =
-  os.hostname() + "-" + crypto.randomBytes(4).toString("hex")
 
-const NODE_CHANNEL = `node-${NODE_ID}`;
+console.log("BOOTSTRAP START");
+// const IDENTITY_FILE = "/var/lib/winone/node_identity.json";
+const IDENTITY_DIR = process.env.IDENTITY_DIR || "../winone";
+const IDENTITY_FILE = path.join(IDENTITY_DIR, "node_identity.json");
 
+const identity = initializeIdentity();
+
+function initializeIdentity() {
+  const existingIdentity = loadIdentity();
+
+  if (existingIdentity && existingIdentity.nodeId) {
+    console.log("Existing node identity found:", existingIdentity.nodeId);
+    return existingIdentity;
+  }
+
+  console.log("No existing identity found. Creating a new one...");
+
+  const randomSuffix = crypto.randomBytes(4).toString("hex");
+  const newNodeId = `node-${os.hostname()}-${randomSuffix}`;
+
+  const newIdentity = {
+    nodeId: newNodeId,
+    machineFingerprint: generateMachineFingerprint()
+  };
+
+  saveIdentity(newIdentity);
+
+  console.log("New identity created:", newIdentity.nodeId);
+
+  return newIdentity;
+}
+
+const NODE_ID = identity.nodeId;
+const MACHINE_FINGERPRINT = identity.machineFingerprint;
+
+console.log("MACHINE_FINGERPRINT: ", MACHINE_FINGERPRINT)
+
+// const NODE_CHANNEL = `node-${NODE_ID}`;
+
+function generateMachineFingerprint() {
+  const data = [
+    os.hostname(),
+    os.platform(),
+    os.arch(),
+    os.cpus().length,
+    os.totalmem()
+  ].join("|");
+
+  return crypto
+    .createHash("sha256")
+    .update(data)
+    .digest("hex");
+}
+
+function loadIdentity() {
+  if (fs.existsSync(IDENTITY_FILE)) {
+    return JSON.parse(fs.readFileSync(IDENTITY_FILE, "utf8"));
+  }
+  return null;
+}
+
+function saveIdentity(identity) {
+  fs.mkdirSync(path.dirname(IDENTITY_FILE), { recursive: true });
+  fs.writeFileSync(IDENTITY_FILE, JSON.stringify(identity, null, 2));
+}
 
 // ==============================
 // Node Detection & Monitoring Flow
@@ -147,6 +208,7 @@ const registryServerClient = new protoDescriptor.Registry(registryServerAddr, gr
 
 async function getCPUStat ()  {
 
+  
     /**
      * CPU Usage ouput data
      * {
@@ -247,7 +309,7 @@ async function getCPUStat ()  {
   try {
 
     // Prepare payload for this node
-    const node_Id = NODE_CHANNEL
+    const node_Id = `node-${NODE_ID}`
 
     // Convert bytes → GB
     const ramTotalGB = +(memInfo.data.total.bytes / (1024 ** 3)).toFixed(2)
@@ -272,7 +334,8 @@ async function getCPUStat ()  {
 
     const userToken = {
       USER_AUTH: process.env.USER_AUTH,
-      ID: node_Id
+      ID: node_Id,
+      // machineFingerprint: MACHINE_FINGERPRINT
     };
     // console.log('USER_AUTH token loaded:', !!userToken);
 
@@ -285,7 +348,7 @@ async function getCPUStat ()  {
 
       nodeId: node_Id,
 
-      cpuUsage: cpuInfo.data,
+      cpuUsage: Number(cpuInfo.data),
 
       systemInfo: JSON.stringify(nodeSystemInfo),
 
@@ -293,9 +356,9 @@ async function getCPUStat ()  {
 
       cpuCores: cpuCores,
 
-      ramTotal: ramTotalGB,
+      ramTotal: Number(ramTotalGB),
 
-      ramFree: ramFreeGB,
+      ramFree: Number(ramFreeGB),
 
       gpuUtilization: null,
 
@@ -311,13 +374,17 @@ async function getCPUStat ()  {
 
       jobStatus: "idle",
 
-      nodeScore: node_Score,
+      machineFingerprint: MACHINE_FINGERPRINT,
+
+      nodeScore: Math.floor(node_Score),
 
       lastHeartbeat: now
 
     }
 
     // console.log("nodePayload: ", nodePayload);
+    
+    // console.log("ENTERED CPU BRANCH1")
 
     const feedback = await new Promise((resolve, reject) => {
 
@@ -334,15 +401,18 @@ async function getCPUStat ()  {
     // console.log('Registry auth response:', feedback);
 
     if (!feedback || feedback.message !== "Client auth details found") {
-      console.error('Registry auth failed or returned unexpected response:', feedback);
+      console.error('Registry auth failed or returned unexpected response:', feedback.message);
       process.exit(1);
     }
+
+    // console.log("ENTERED CPU BRANCH");
 
     // Register node in DB and setup environment if not already registered
 
      const fb = await new Promise((resolve, reject) => {
 
-      registryServerClient.registerNodeDetails({nodePayload, userToken}, (err, response) => {
+      registryServerClient.registerNodeDetails({
+        nodePayload, userToken}, (err, response) => {
 
           if (err) {
             return reject(err);
@@ -355,9 +425,11 @@ async function getCPUStat ()  {
     // console.log(fb);
 
     if(fb.message === "Internal server error"){
-      console.log("Internal server error")
+      console.log("Internal server error: ", fb.details)
       exit(1)
     };
+
+    console.log("ABOUT TO SPLIT NODE ID:", nodePayload.nodeId);
 
     const [prefix, owner, id] = nodePayload.nodeId.split("-");
 

@@ -4,14 +4,14 @@ package registry;
 
 service Registry {
 
-    rpc checkNodeDetails(Details) returns (StatusMessage) {}
+    rpc checkNodeById(Details) returns (StatusMessage) {}
     rpc checkAuthClientDetails(Detailstwo) returns (StatusMessage) {}
     rpc registerNodeDetails(Detailsthree) returns (StatusMessage) {}
 }
 
 message Details {
-    string NODE_CODE = 1;
-    string HOST_NAME = 2;
+    string nodeId = 1;
+    string machineFingerprint = 2;
 }
 
 message Detailstwo {
@@ -29,18 +29,19 @@ message NodePayload {
     int32 cpuUsage = 2;
     string systemInfo = 3;
     string platform = 4;
-    int32 cpuCores = 5;
-    int32 ramTotal = 6;
-    int32 ramFree = 7;
+    double cpuCores = 5;
+    double ramTotal = 6;
+    double ramFree = 7;
     int32 gpuUtilization = 8;
     int32 gpuMemoryFree = 9;
     int32 temperature = 10;
     int32 simulationsPerSecond = 11;
-    int32 uptime = 12;
+    int64 uptime = 12;
     string nodeStatus = 13;
     string jobStatus = 14;
-    int32 nodeScore = 15;
-    string lastHeartbeat = 16;
+    string machineFingerprint = 15;
+    double nodeScore = 16;
+    string lastHeartbeat = 17;
 }
 
 message Detailsthree {

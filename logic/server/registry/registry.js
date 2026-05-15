@@ -29,17 +29,14 @@ const registryPackage = protoDescriptor.registry;
  * @param {function(Error, StatusMessage)} callback Response callback
  */
 
-async function checkNodeDetails (call, callback) {
+async function checkNodeById (call, callback) {
     
     const requestData = call.request;
 
     try {
 
-    const nodeCode = requestData.NODE_CODE;
-    const hostName = requestData.HOST_NAME;
-
-    const NODEID = `node-${hostName}-${nodeCode}`
-    // console.log("NODEID: ", NODEID);
+    const NODEID = requestData.nodeId;
+    const machineFingerprint = requestData.machineFingerprint;
 
     const existingNode = await nodeState.findOne({
       where: { nodeId: NODEID }
@@ -121,28 +118,6 @@ async function checkAuthClientDetails (call, callback) {
         });
       }
 
-      // const prefix = "dc_live";
-
-      // // Public ID (short lookup identifier)
-      // const publicId = existingClientAuth.tokenPublicId; 
-      // // 8 hex chars
-
-      // // Secret (high entropy)
-      // const secretHash = existingClientAuth.tokenSecretHash;
-
-
-      // // Full token sent to client
-      // const rawToken = `${prefix}_${publicId}.${secret}`;
-
-      // if(existingClientAuth.token !==  rawToken){
-        
-      //   return callback(null, {
-      //     message: "Invalid Auth token sent",
-      //     details: "404"
-      //   });
-
-      // };
-
       return callback(null, {
         message: "Client auth details found",
         details: "done"
@@ -171,78 +146,6 @@ async function checkAuthClientDetails (call, callback) {
     }
 };
 
-// async function registerNodeDetails(call, callback) {
-//   const details = call.request;
-
-//   if (!details || !details.nodePayload || !details.userToken) {
-//     return callback(null, {
-//       message: "Invalid registerNodeDetails payload",
-//       details: "400"
-//     });
-//   }
-
-//   try {
-//     // 1. Save node
-//     const registeredNode = await nodeState.create(details.nodePayload);
-
-//     if (!registeredNode) {
-//       return callback(null, {
-//         message: "Node creation failed",
-//         details: "500"
-//       });
-//     }
-
-//     // 2. Find user
-//     const nodeUserDetails = await userModel.findOne({
-//       where: { token: details.userToken.USER_AUTH }
-//     });
-
-//     if (!nodeUserDetails) {
-//       return callback(null, {
-//         message: "Client not found",
-//         details: "404"
-//       });
-//     }
-
-//     console.log("nodeUserDetails Initial: ", nodeUserDetails)
-
-//     // ✅ correct node id
-//     const newNodeId = details.userToken.ID;
-
-//     console.log("newNodeId Initial: ", newNodeId)
-
-//     // 3. Ensure array
-//     let existingRegNodes = nodeUserDetails.regNodes;
-
-//     // if (!Array.isArray(existingRegNodes)) {
-//     //   existingRegNodes = [];
-//     // }
-
-//     // 4. Add safely
-//     if (!existingRegNodes.includes(newNodeId)) {
-//       existingRegNodes.push(newNodeId);
-
-//     nodeUserDetails.regNodes = existingRegNodes;
-
-//     await nodeUserDetails.save();
-//     // console.log("nodeUserDetails Updated: ", nodeUserDetails)
-//     }
-
-//     return callback(null, {
-//       message: "Client node details saved",
-//       details: "done"
-//     });
-
-//   } catch (error) {
-//     console.error("Unexpected error:", error);
-
-//     return callback(null, {
-//       message: "Internal server error",
-//       details: error.message
-//     });
-//   }
-// }
-
 async function registerNodeDetails(call, callback) {
   const details = call.request;
 
@@ -255,6 +158,7 @@ async function registerNodeDetails(call, callback) {
 
   try {
     // 1. Save node
+    console.log("nodePayload: ", details.nodePayload)
     const registeredNode = await nodeState.create(details.nodePayload);
 
     if (!registeredNode) {
@@ -320,7 +224,7 @@ async function registerNodeDetails(call, callback) {
 function getServer() {
   const registryServer = new grpc.Server();
   registryServer.addService(registryPackage.Registry.service, {
-    checkNodeDetails,
+    checkNodeById,
     checkAuthClientDetails,
     registerNodeDetails
   });

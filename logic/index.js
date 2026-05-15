@@ -18,6 +18,7 @@ const {startControlPanelServer} = require("./server/main_control_panel/controlpa
 const {startMonitoringServer} = require("./server/monitoring_control_panel/monitoring");
 const {startQueueServer, heartBeatWorkerQueue} = require("./server/queue_control_panel/queue");
 const {startRegistryServer} = require("./server/registry/registry");
+const {markOfflineNodes} = require('./controllers/offlineNodes');
 
 
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
@@ -155,6 +156,9 @@ async function startServer() {
     resultAggregatorQueueWorker();
     console.log("Started resultAggregatorQueueWorker");
 
+    // Run immediately at startup
+    markOfflineNodes();
+
   } catch (err) {
     console.error("💥 Fatal startup error:", err);
 
@@ -164,6 +168,9 @@ async function startServer() {
 }
 
 startServer();
+
+// Run every 60 seconds
+setInterval(markOfflineNodes, 60 * 1000);
 
 ////<======================= fabric network startup ======>>////
 

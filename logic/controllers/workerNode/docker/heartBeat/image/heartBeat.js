@@ -1,359 +1,116 @@
+const fs = require("fs");
 const path = require("path");
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
-// ==============================
-// Node Heartbeat Monitoring Script
-// ==============================
-
-// Import necessary modules
-const axios = require("axios"); // For sending HTTP requests (currently unused)
-const os = require("os"); // Node.js built-in module for OS info
-const { OSUtils } = require("node-os-utils"); // Provides CPU, memory, disk stats easily
-const osu = new OSUtils(); // Initialize OS utilities
-// const nodeState = require("../config/model/nodeHeartBeat"); // Database model for node heartbeats
-// const queueConnection = require('../config/db/queue');
-// const { Queue, Worker} = require('bullmq');
-
-const { exit } = require("process");
+const os = require("os");
 const { exec } = require("child_process");
-const grpc = require('@grpc/grpc-js');
-const protoLoader = require('@grpc/proto-loader');
+const grpc = require("@grpc/grpc-js");
+const protoLoader = require("@grpc/proto-loader");
+const { OSUtils } = require("node-os-utils");
 
+const osu = new OSUtils();
+const cpuCores = os.cpus().length;
 
-// ==============================
-// Global Variables
-// ==============================
+// =====================================================
+// Persistent Identity
+// =====================================================
 
-const PROTO_PATH = path.join(__dirname, '..', 'registry.proto');
-const packageDefinition = protoLoader.loadSync(
-    PROTO_PATH,
-    {keepCase: true,
-     longs: String,
-     enums: String,
-     defaults: true,
-     oneofs: true
-    });
-const protoDescriptor = grpc.loadPackageDefinition(packageDefinition).registry;
+const IDENTITY_FILE = "/var/lib/winone/node_identity.json";
+
+function loadIdentity() {
+  if (!fs.existsSync(IDENTITY_FILE)) {
+    console.error(`Node identity file not found: ${IDENTITY_FILE}`);
+    console.error("Run the node registration process first.");
+    process.exit(1);
+  }
+
+  const identity = JSON.parse(fs.readFileSync(IDENTITY_FILE, "utf8"));
+
+  if (!identity.nodeId || !identity.machineFingerprint) {
+    console.error("Invalid node identity file.");
+    process.exit(1);
+  }
+
+  return identity;
+}
+
+const identity = loadIdentity();
+const NODE_ID = identity.nodeId;
+const MACHINE_FINGERPRINT = identity.machineFingerprint;
+
+console.log("Loaded node identity:", NODE_ID);
+
+// =====================================================
+// Registry gRPC Client
+// =====================================================
+
+const REGISTRY_PROTO_PATH = path.join(__dirname, "..", "registry.proto");
+const registryPackageDefinition = protoLoader.loadSync(REGISTRY_PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+});
+
+const registryProto = grpc.loadPackageDefinition(registryPackageDefinition)
+  .registry;
+
 const registryServerAddr = process.env.REGISTRY_SERVER_ADDRESS;
-if (!registryServerAddr || typeof registryServerAddr !== 'string') {
-  throw new Error('Missing or invalid REGISTRY_SERVER_ADDRESS; verify the .env file is loaded from the repository root and contains a valid string');
+if (!registryServerAddr) {
+  throw new Error("Missing REGISTRY_SERVER_ADDRESS");
 }
-const client = new protoDescriptor.Registry(registryServerAddr, grpc.credentials.createInsecure());
 
+const registryClient = new registryProto.Registry(
+  registryServerAddr,
+  grpc.credentials.createInsecure()
+);
 
-const QUEU_SERVER_PROTO_PATH = path.join(__dirname, '..', 'queue.proto');
-const queueServerpackageDefinition = protoLoader.loadSync(
-    QUEU_SERVER_PROTO_PATH,
-    {keepCase: true,
-     longs: String,
-     enums: String,
-     defaults: true,
-     oneofs: true
-    });
-const queueServerprotoDescriptor = grpc.loadPackageDefinition(queueServerpackageDefinition).nodeDetails;
+// =====================================================
+// Queue gRPC Client
+// =====================================================
+
+const QUEUE_PROTO_PATH = path.join(__dirname, "..", "queue.proto");
+const queuePackageDefinition = protoLoader.loadSync(QUEUE_PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+});
+
+const queueProto = grpc.loadPackageDefinition(queuePackageDefinition)
+  .nodeDetails;
+
 const queueServerAddr = process.env.QUEUE_SERVER_ADDRESS;
-if (!queueServerAddr || typeof queueServerAddr !== 'string') {
-  throw new Error('Missing or invalid QUEUE_SERVER_ADDRESS; verify the .env file is loaded from the repository root and contains a valid string');
+if (!queueServerAddr) {
+  throw new Error("Missing QUEUE_SERVER_ADDRESS");
 }
-const queueServerClient = new queueServerprotoDescriptor.NodeDetails(queueServerAddr, grpc.credentials.createInsecure());
 
+const queueServerClient = new queueProto.NodeDetails(
+  queueServerAddr,
+  grpc.credentials.createInsecure()
+);
 
-let NODE_CHANNEL =""; // Redis queue for this node
-const url = "http://localhost:3000/api/v1/send-heartBeat-queue";
-const cpuCores = os.cpus().length; // Number of CPU cores on the machine
-
-
-// ==============================
-// Function: getCPUStat
-// Purpose: Collect system stats and send heartbeat
-// ==============================
-
-async function getCPUStat(NODE_CODE, HOST_NAME){
-
-  try {
-   const feedback = await new Promise((resolve, reject) => {
-   
-         client.checkNodeDetails({ 
-             NODE_CODE, HOST_NAME
-           }, (err, response) => {
-   
-             if (err) {
-               return reject(err);
-             }
-             resolve(response);
-           });
-   
-       });
-    
-      // console.log(feedback);
-      // console.log("checkNodeDetails: ", feedback);
-
-    if(feedback.details !== "done") {
-      console.log("Invalid node sender details from heartBeat.js")
-      // exit(1)
-    };
-
-  } catch (error){
-
-    console.error("Failed:", error.response?.data || error.message);
-  };
-  
-
-  // Shortcuts for OS utilities
-  const cpu = osu.cpu
-  const mem = osu.memory
-  const overV = osu.overview() // Full overview of system stats
-    /**
-     * CPU Usage ouput data
-     * {
-        success: true,
-        data: 4.651162790697675, // CPU usage % utilization
-        timestamp: 1772802409876, // Measurement time
-        cached: false,
-        platform: 'linux' // OS
-      }
-     */
-
-  // ------------------------------
-  // Get CPU Usage
-  // ------------------------------
-
-    const cpuInfo = await cpu.usage();
-
-    /**
-     * Memory Output data
-     * {
-        success: true,
-        data: {
-          total: DataSize { bytes: 5158723584 }, // Total RAM
-          available: DataSize { bytes: 2806730752 }, // Available RAM
-          used: DataSize { bytes: 2351992832 }, // Used RAM
-          free: DataSize { bytes: 2369638400 }, // Free RAM
-          cached: DataSize { bytes: 407662592 },
-          buffers: DataSize { bytes: 128364544 },
-          usagePercentage: 45.5925345427463
-        },
-        timestamp: 1772802409878,
-        cached: false,
-        platform: 'linux'
-      }
-     */
-
-  // ------------------------------
-  // Get Memory Usage
-  // ------------------------------
-
-    const memInfo = await mem.info();
-
-    /**
-     *   {
-          platform: 'linux',
-          timestamp: 1772802409876,
-          system: {
-            hostname: 'Osemudiamhen',
-            platform: 'linux',
-            distro: 'linux',
-            release: '6.6.87.2-microsoft-standard-WSL2',
-            kernel: 'unknown',
-            arch: 'x86_64',
-            uptime: 198408360,
-            uptimeSeconds: 198408.36,
-            bootTime: 1772604001294,
-            loadAverage: [Object],
-            userCount: undefined,
-            processCount: undefined,
-            time: 1772802409655,
-            timezone: 'Africa/Lagos'
-          },
-          cpu: { usage: 4.651162790697675 },
-          memory: {
-            total: '4.80 GB',
-            used: '2.19 GB',
-            available: '2.61 GB',
-            usagePercentage: 45.57,
-            swap: [Object]
-          },
-          disk: {
-            total: [DataSize],
-            used: [DataSize],
-            available: [DataSize],
-            usagePercentage: 30.73,
-            disks: 31
-          },
-          network: {
-            interfaces: 6,
-            activeInterfaces: 1,
-            totalRxBytes: [DataSize],
-            totalTxBytes: [DataSize],
-            totalPackets: 4949294,
-            totalErrors: 0
-          },
-          processes: {
-            total: 0,
-            running: 0,
-            sleeping: 0,
-            waiting: 0,
-            zombie: 0,
-            stopped: 0,
-            unknown: 0,
-            totalCpuUsage: 0,
-            totalMemoryUsage: [DataSize]
-          }
-        }
-     */
-
-  // ------------------------------
-  // Get Full System Overview
-  // Includes disk, network, processes, uptime, etc.
-  // ------------------------------
-
-    const overVInfo = await overV;
-    // console.log("Processes Information",overVInfo.processes);
-    // console.log("System hostname:", overVInfo.system.hostname);
-
-    NODE_CHANNEL =  "node" + "-" + overVInfo.system.hostname + "-" + NODE_CODE;
-    const expectedID = `node-${HOST_NAME}-${NODE_CODE}`;
-
-    if( expectedID !== NODE_CHANNEL){
-        console.log(`Invalid from ${expectedID}`);
-
-        // TODO: Disable this node in the database if it doesn't match
-    }
-
-    try {
-    
-      // ------------------------------
-      // Prepare Node Heartbeat Payload
-      // ------------------------------
-
-      const nodeId = NODE_CHANNEL
-    
-        // Convert bytes → GB
-        const ramTotalGB = +(memInfo.data.total.bytes / (1024 ** 3)).toFixed(2)
-        const ramFreeGB  = +(memInfo.data.available.bytes / (1024 ** 3)).toFixed(2)
-    
-        const uptimeSeconds = Math.floor(overVInfo.system.uptimeSeconds)
-    
-        const now = new Date();
-
-        // Node score calculation based on CPU cores, free RAM, and CPU usage
-        const node_Score = (cpuCores * 5) + (ramFreeGB * 3) + (100 - cpuInfo.data) * 0.5
-
-        const nodeSystemInfo = overVInfo.system; 
-        const nodePlatformInfo = overVInfo.platform;
-        const clIResult = await getOpenCLInfo();
-        const clInformation = parseCLInfo(clIResult);
-        // console.log("CL Information: ", clInformation)
-    
-        // Heartbeat payload to send to Redis queue or DB
-        const nodePayload = {
-    
-          nodeId: nodeId,
-          
-          state: "heartBeat",
-    
-          cpuUsage: cpuInfo.data,
-
-          systemInfo: nodeSystemInfo,
-
-          clInfo: clInformation,
-
-          platform: nodePlatformInfo,
-    
-          cpuCores: cpuCores,
-    
-          ramTotal: ramTotalGB,
-    
-          ramFree: ramFreeGB,
-    
-          gpuUtilization: null,
-
-          gpuMemoryFree: null,
-          
-          temperature: null,
-    
-          simulationsPerSecond: null,
-    
-          uptime: uptimeSeconds,
-    
-          nodeStatus: "online",
-    
-          // jobStatus: "idle",
-    
-          nodeScore: node_Score,
-    
-          lastHeartbeat: now
-    
-        }
-
-      // ===== Send heartbeat Request =====
-
-      const feedback = await new Promise((resolve, reject) => {
-
-      queueServerClient.heartBeatSignal({
-          QUEUE_NAME: NODE_CHANNEL,
-          QUEUE_PAYLOAD: JSON.stringify(nodePayload),
-          NODE_ID: nodeId
-        }, (err, response) => {
-
-          if (err) {
-            return reject(err);
-          }
-          resolve(response);
-        });
-
-    });
-
-    console.log("heartBeatSignal: ", feedback)
-     
-    // if (!feedback.data) {
-    //     console.log(`POST request failed from line 251 of heartBeat.js file: ${feedback.status} ${feedback.statusText}`);
-    // }
-
-    // if(feedback.data.status === 200){
-    //   console.log("Node heartbeat saved:", nodeId)
-    // };
-
-    // if(feedback.data.status === 400){
-    //   console.log("Node heartbeat failed:", nodeId)
-    //   exit(1);
-    // };
-
-    return feedback;
-    
-    } catch (error) {
-  
-      console.error("Error saving node stats:", error)
-  
-    }
-    
-};
-
-// ==============================
-// Function: sendHeartBeat
-// Purpose: Read environment variables and trigger heartbeat
-// ==============================
-
-async function sendHeartBeat(){
-  const nodeCode = process.env.NODE_CODE; // Unique code for this node
-  //make sure node-code exist in directory and get registered hostname
-
-  const hostName = process.env.HOST_NAME; // Hostname registration
-  await getCPUStat(nodeCode, hostName);
-};
+// =====================================================
+// OpenCL Detection
+// =====================================================
 
 function getOpenCLInfo() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     exec("clinfo", (error, stdout, stderr) => {
       if (error) {
-        console.warn("clinfo failed, continuing without OpenCL info:", error.message || stderr || error);
+        console.warn(
+          "clinfo failed, continuing without OpenCL info:",
+          error.message || stderr || error
+        );
         return resolve("");
       }
 
       resolve(stdout || "");
     });
   });
-};
+}
 
 function parseCLInfo(data) {
   const result = {};
@@ -365,35 +122,22 @@ function parseCLInfo(data) {
   const lines = data.split("\n");
   const separatorRegex = /^(.+?)(?:\s{2,}|:\s*)(.+)$/;
 
-  for (let line of lines) {
-    if (typeof line !== "string") {
-      continue;
-    }
-
+  for (const line of lines) {
     const trimmedLine = line.trim();
-    if (!trimmedLine) {
-      continue;
-    }
+    if (!trimmedLine) continue;
 
     const match = trimmedLine.match(separatorRegex);
-    if (!match) {
-      continue;
-    }
+    if (!match) continue;
 
     const key = match[1].trim();
     const value = match[2].trim();
-    if (!key || !value) {
-      continue;
-    }
 
     switch (key) {
       case "Number of platforms":
         result.platformCount = parseInt(value, 10);
         break;
       case "Platform Name":
-        if (!result.platformName) {
-          result.platformName = value;
-        }
+        if (!result.platformName) result.platformName = value;
         break;
       case "Platform Vendor":
         result.platformVendor = value;
@@ -405,9 +149,7 @@ function parseCLInfo(data) {
         result.deviceCount = parseInt(value, 10);
         break;
       case "Device Name":
-        if (!result.deviceName) {
-          result.deviceName = value;
-        }
+        if (!result.deviceName) result.deviceName = value;
         break;
       case "Device Vendor":
         result.deviceVendor = value;
@@ -435,7 +177,153 @@ function parseCLInfo(data) {
   return result;
 }
 
-// ==============================
-// Run the heartbeat every 60 seconds
-// ==============================
-setInterval(sendHeartBeat, 60000);
+// =====================================================
+// Registry Validation
+// =====================================================
+
+async function validateNode() {
+  return new Promise((resolve, reject) => {
+    registryClient.checkNodeById(
+      {
+        nodeId: NODE_ID,
+        machineFingerprint: MACHINE_FINGERPRINT,
+      },
+      (err, response) => {
+        if (err) return reject(err);
+        resolve(response);
+      }
+    );
+  });
+}
+
+// =====================================================
+// Collect Metrics
+// =====================================================
+
+async function collectMetrics() {
+  const cpu = osu.cpu;
+  const mem = osu.memory;
+
+  const cpuInfo = await cpu.usage();
+  const memInfo = await mem.info();
+  const overview = await osu.overview();
+
+  const ramTotalGB = +(
+    memInfo.data.total.bytes /
+    1024 ** 3
+  ).toFixed(2);
+
+  const ramFreeGB = +(
+    memInfo.data.available.bytes /
+    1024 ** 3
+  ).toFixed(2);
+
+  const uptimeSeconds = Math.floor(overview.system.uptimeSeconds);
+
+  const nodeScore =
+    cpuCores * 5 +
+    ramFreeGB * 3 +
+    (100 - cpuInfo.data) * 0.5;
+
+  const clInfoRaw = await getOpenCLInfo();
+  const clInfo = parseCLInfo(clInfoRaw);
+
+  return {
+    nodeId: NODE_ID,
+    state: "heartBeat",
+
+    cpuUsage: cpuInfo.data,
+    systemInfo: overview.system,
+    clInfo,
+    platform: overview.platform,
+
+    cpuCores,
+    ramTotal: ramTotalGB,
+    ramFree: ramFreeGB,
+
+    gpuUtilization: null,
+    gpuMemoryTotal: null,
+    gpuMemoryFree: null,
+    temperature: null,
+    simulationsPerSecond: null,
+
+    uptime: uptimeSeconds,
+
+    nodeStatus: "online",
+    nodeScore,
+
+    lastHeartbeat: new Date(),
+  };
+}
+
+// =====================================================
+// Send Heartbeat
+// =====================================================
+
+async function sendHeartBeat() {
+  try {
+    // Verify the node still exists and belongs to this machine
+    const validation = await validateNode();
+
+    if (!validation || validation.details !== "done") {
+      console.error("Node validation failed:", validation);
+      return;
+    }
+
+    // Collect current system metrics
+    const nodePayload = await collectMetrics();
+
+    // Send heartbeat to queue service
+    const response = await new Promise((resolve, reject) => {
+      queueServerClient.heartBeatSignal(
+        {
+          QUEUE_NAME: NODE_ID,
+          QUEUE_PAYLOAD: JSON.stringify(nodePayload),
+          NODE_ID: NODE_ID,
+        },
+        (err, response) => {
+          if (err) return reject(err);
+          resolve(response);
+        }
+      );
+    });
+
+    console.log(
+      `[${new Date().toISOString()}] Heartbeat sent for ${NODE_ID}`
+    );
+    console.log("heartBeatSignal:", response);
+  } catch (error) {
+    console.error("Heartbeat failed:", error.message || error);
+  }
+}
+
+// =====================================================
+// Startup
+// =====================================================
+
+async function start() {
+  try {
+    console.log("Validating node identity...");
+
+    const validation = await validateNode();
+
+    if (!validation || validation.details !== "done") {
+      console.error("Node validation failed:", validation);
+      process.exit(1);
+    }
+
+    console.log("Node validation successful.");
+
+    // Send one heartbeat immediately
+    await sendHeartBeat();
+
+    // Then send every 5 seconds
+    setInterval(sendHeartBeat, 5000);
+    
+  } catch (error) {
+    console.error("Startup failed:", error.message || error);
+    process.exit(1);
+  }
+}
+
+start();

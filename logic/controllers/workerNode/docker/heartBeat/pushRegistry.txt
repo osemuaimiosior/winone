@@ -1,28 +1,12 @@
-step 1. 
+docker build -t winone_node_heartbeat . && docker tag winone_node_heartbeat osemu/winone_node_heartbeat && docker push osemu/winone_node_heartbeat
 
-docker build -t nodeHeartBeat .
+Private registry: registry.yourdomain.com/winone_node_heartbeat
 
-step 2. 
-
-Docker Hub
-
-docker tag nodeHeartBeat yourdockerhub/nodeHeartBeat
-docker push yourdockerhub/nodeHeartBeat
-
-Private registry
-
-registry.yourdomain.com/nodeHeartBeat
-
-///user install
-
-step 5. Build your Monte Carlo node image
-    docker pull yourdockerhub/nodeHeartBeat
-
-step 6. Run the compute node
-    docker run -d \
+docker run -d \
     --restart unless-stopped \
-    --gpus all \
-    --name nodeHeartBeat \
-    yourdockerhub/nodeHeartBeat
+    -e REGISTRY_SERVER_ADDRESS=52.90.249.116:50053 \
+    -e QUEUE_SERVER_ADDRESS=52.90.249.116:50052 \
+    -v $(pwd)/winone-data:/var/lib/winone \
+    --name winone-heartbeat \
+    osemu/winone_node_heartbeat
 
-    docker build -t duction_node_heartbeat . && docker tag duction_node_heartbeat osemu/duction_node_heartbeat && docker push osemu/duction_node_heartbeat
